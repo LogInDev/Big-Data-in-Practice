@@ -5,6 +5,9 @@ import pandas as pd
 import warnings
 import re
 import math
+import logging
+
+
 
 # row 생략 없이 출력
 pd.set_option('display.max_rows', None)
@@ -106,6 +109,14 @@ def insert_process(tabel_name,df_final):
         # 연결 종료
         engine.dispose()
 
+#log남기기
+logger = logging.getLogger(name='')  # RootLogger
+logger.setLevel(logging.DEBUG)
+formatter = logging.Formatter('|%(asctime)s||%(name)s||%(levelname)s|\n%(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+file_handler = logging.FileHandler('test.log') ## 파일 핸들러 생성
+file_handler.setFormatter(formatter) ## 텍스트 포맷 설정
+logger.addHandler(file_handler) ## 핸들러 등록
+
 #-----------------------------------------------------------------------------------------------------------------------
 
 # ms001m데이터 가져오기
@@ -123,6 +134,7 @@ try:
     )
     ORDER BY meas_dtm;
     """
+    logging.info('Start fetching data from database')
     df = pd.read_sql_query(sql_query, engine)
     
     # 컬럼 이름 지정
@@ -130,161 +142,174 @@ try:
     df.columns = ['meas_dtm', 'rcs_id', 'data_typ'] + tags
     df[tags] = df[tags].astype(float)
     df.reset_index(inplace=True, drop=True)
+except Exception as e:
+    logging.error('Error while fetching data from database: %s', e)
 finally:
     # 연결 종료
     engine.dispose()
 
-# 2. 원본 전체 데이터 df 복사
-dfX = df.copy()
+try:
+    logging.info('Start processing data')
+    # 2. 원본 전체 데이터 df 복사
+    dfX = df.copy()
 
 
-# 상한하한 적용
-for i in range(len(rcs_list)):
-    for j in range(len(tag_list[i])):
-        dfX.loc[(dfX['rcs_id'] == rcs_list[i]) & (dfX['data_typ'] == 'AI'), tag_list[i][j]] = \
-            dfX.loc[(dfX['rcs_id'] == rcs_list[i]) & (dfX['data_typ'] == 'AI'), tag_list[i][j]].clip(lower=minmaxValue[i][j][1], upper=minmaxValue[i][j][2])
+    # 상한하한 적용
+    for i in range(len(rcs_list)):
+        for j in range(len(tag_list[i])):
+            dfX.loc[(dfX['rcs_id'] == rcs_list[i]) & (dfX['data_typ'] == 'AI'), tag_list[i][j]] = \
+                dfX.loc[(dfX['rcs_id'] == rcs_list[i]) & (dfX['data_typ'] == 'AI'), tag_list[i][j]].clip(lower=minmaxValue[i][j][1], upper=minmaxValue[i][j][2])
 
-dfR = dfX.copy()
-df003 = dfX.copy()
-df004 = dfX.copy() 
- 
-# 1. 0.__ → +-10
-for key, value in list(select_tag.items())[:2]:
-    rcs_id_filter = (dfR['rcs_id'] == key[:-1]) & (dfR['data_typ'] == 'AI')
-    tmp = dfR.loc[rcs_id_filter, value]
-    columns = tmp.columns
+    dfR = dfX.copy()
+    df003 = dfX.copy()
+    df004 = dfX.copy() 
+    
+    # 1. 0.__ → +-10
+    for key, value in list(select_tag.items())[:2]:
+        rcs_id_filter = (dfR['rcs_id'] == key[:-1]) & (dfR['data_typ'] == 'AI')
+        tmp = dfR.loc[rcs_id_filter, value]
+        columns = tmp.columns
 
-    for i in range(len(columns)):
-        column = columns[i]
-        x = tmp.iloc[-1, i]
-        data = tmp.iloc[1:, i]
-        median = data.apply(lambda x: float('%.1f' % x)).median()
-        mad = round(((data - median).abs()).median(), 2)
-        mean = tmp.iloc[:5, i].mean()
+        for i in range(len(columns)):
+            column = columns[i]
+            x = tmp.iloc[-1, i]
+            data = tmp.iloc[1:, i]
+            median = data.apply(lambda x: float('%.1f' % x)).median()
+            mad = round(((data - median).abs()).median(), 2)
+            mean = tmp.iloc[:5, i].mean()
 
-        df003_filter = df003.loc[rcs_id_filter].index[-1]
-        df004_filter = df004.loc[rcs_id_filter].index[-1]
+            df003_filter = df003.loc[rcs_id_filter].index[-1]
+            df004_filter = df004.loc[rcs_id_filter].index[-1]
 
-        if(mad == 0):
-            if((tmp.iloc[1:5,i].mean() * 4) < x):
-                df003.loc[df003_filter, column] = np.nan
-                df004.loc[df004_filter, column] = mean
-        else:
-            zscore = 0.6745 * (x - median) / mad
-            if abs(zscore) > 10:
-                df003.loc[df003_filter, column] = np.nan
-                df004.loc[df004_filter, column] = mean
+            if(mad == 0):
+                if((tmp.iloc[1:5,i].mean() * 4) < x):
+                    df003.loc[df003_filter, column] = np.nan
+                    df004.loc[df004_filter, column] = mean
+            else:
+                zscore = 0.6745 * (x - median) / mad
+                if abs(zscore) > 10:
+                    df003.loc[df003_filter, column] = np.nan
+                    df004.loc[df004_filter, column] = mean
 
-# 2. ._ → +-200
-for key, value in list(select_tag.items())[2:5]:
-    rcs_id_filter = (dfR['rcs_id'] == key[:-1]) & (dfR['data_typ'] == 'AI')
-    tmp = dfR.loc[rcs_id_filter, value]
-    columns = tmp.columns
+    # 2. ._ → +-200
+    for key, value in list(select_tag.items())[2:5]:
+        rcs_id_filter = (dfR['rcs_id'] == key[:-1]) & (dfR['data_typ'] == 'AI')
+        tmp = dfR.loc[rcs_id_filter, value]
+        columns = tmp.columns
 
-    for i in range(len(columns)):
-        column = columns[i]
-        x = tmp.iloc[-1, i]
-        data = tmp.iloc[1:, i]
-        median = data.apply(lambda x: float('%.2f' % x)).median()
-        mad = round(((data - median).abs()).median(), 2)
-        mean = tmp.iloc[:5, i].mean()
+        for i in range(len(columns)):
+            column = columns[i]
+            x = tmp.iloc[-1, i]
+            data = tmp.iloc[1:, i]
+            median = data.apply(lambda x: float('%.2f' % x)).median()
+            mad = round(((data - median).abs()).median(), 2)
+            mean = tmp.iloc[:5, i].mean()
 
-        df003_filter = df003.loc[rcs_id_filter].index[-1]
-        df004_filter = df004.loc[rcs_id_filter].index[-1]
+            df003_filter = df003.loc[rcs_id_filter].index[-1]
+            df004_filter = df004.loc[rcs_id_filter].index[-1]
 
-        if(mad == 0):
-            if((tmp.iloc[1:5,i].mean() * 4) < x):
-                df003.loc[df003_filter, column] = np.nan
-                df004.loc[df004_filter, column] = mean
-        else:
-            zscore = 0.6745 * (x - median) / mad
-            if abs(zscore) > 200:
-                df003.loc[df003_filter, column] = np.nan
-                df004.loc[df004_filter, column] = mean
+            if(mad == 0):
+                if((tmp.iloc[1:5,i].mean() * 4) < x):
+                    df003.loc[df003_filter, column] = np.nan
+                    df004.loc[df004_filter, column] = mean
+            else:
+                zscore = 0.6745 * (x - median) / mad
+                if abs(zscore) > 200:
+                    df003.loc[df003_filter, column] = np.nan
+                    df004.loc[df004_filter, column] = mean
 
-# 3. 십의 자리 → +-25
-for key, value in list(select_tag.items())[5:7]:
-    rcs_id_filter = (dfR['rcs_id'] == key[:-1]) & (dfR['data_typ'] == 'AI')
-    tmp = dfR.loc[rcs_id_filter, value]
-    columns = tmp.columns
+    # 3. 십의 자리 → +-25
+    for key, value in list(select_tag.items())[5:7]:
+        rcs_id_filter = (dfR['rcs_id'] == key[:-1]) & (dfR['data_typ'] == 'AI')
+        tmp = dfR.loc[rcs_id_filter, value]
+        columns = tmp.columns
 
-    for i in range(len(columns)):
-        column = columns[i]
-        x = tmp.iloc[-1, i]
-        data = tmp.iloc[1:, i]
-        median = data.apply(lambda x: float('%.1f' % x)).median()
-        mad = round(((data - median).abs()).median(), 2)
-        mean = tmp.iloc[:5, i].mean()
+        for i in range(len(columns)):
+            column = columns[i]
+            x = tmp.iloc[-1, i]
+            data = tmp.iloc[1:, i]
+            median = data.apply(lambda x: float('%.1f' % x)).median()
+            mad = round(((data - median).abs()).median(), 2)
+            mean = tmp.iloc[:5, i].mean()
 
-        df003_filter = df003.loc[rcs_id_filter].index[-1]
-        df004_filter = df004.loc[rcs_id_filter].index[-1]
+            df003_filter = df003.loc[rcs_id_filter].index[-1]
+            df004_filter = df004.loc[rcs_id_filter].index[-1]
 
-        if(mad == 0):
-            if((tmp.iloc[1:5,i].mean() * 4) < x):
-                df003.loc[df003_filter, column] = np.nan
-                df004.loc[df004_filter, column] = mean
-        else:
-            zscore = 0.6745 * (x - median) / mad
-            if abs(zscore) > 25:
-                df003.loc[df003_filter, column] = np.nan
-                df004.loc[df004_filter, column] = mean
+            if(mad == 0):
+                if((tmp.iloc[1:5,i].mean() * 4) < x):
+                    df003.loc[df003_filter, column] = np.nan
+                    df004.loc[df004_filter, column] = mean
+            else:
+                zscore = 0.6745 * (x - median) / mad
+                if abs(zscore) > 25:
+                    df003.loc[df003_filter, column] = np.nan
+                    df004.loc[df004_filter, column] = mean
 
-# 4. 백의 자리 → +-50
-for key, value in list(select_tag.items())[7:9]:
-    rcs_id_filter = (dfR['rcs_id'] == key[:-1]) & (dfR['data_typ'] == 'AI')
-    tmp = dfR.loc[rcs_id_filter, value]
-    columns = tmp.columns
+    # 4. 백의 자리 → +-50
+    for key, value in list(select_tag.items())[7:9]:
+        rcs_id_filter = (dfR['rcs_id'] == key[:-1]) & (dfR['data_typ'] == 'AI')
+        tmp = dfR.loc[rcs_id_filter, value]
+        columns = tmp.columns
 
-    for i in range(len(columns)):
-        column = columns[i]
-        x = tmp.iloc[-1, i]
-        data = tmp.iloc[1:, i]
-        median = data.apply(lambda x: float('%.1f' % x)).median()
-        mad = round(((data - median).abs()).median(), 2)
-        mean = tmp.iloc[:5, i].mean()
+        for i in range(len(columns)):
+            column = columns[i]
+            x = tmp.iloc[-1, i]
+            data = tmp.iloc[1:, i]
+            median = data.apply(lambda x: float('%.1f' % x)).median()
+            mad = round(((data - median).abs()).median(), 2)
+            mean = tmp.iloc[:5, i].mean()
 
-        df003_filter = df003.loc[rcs_id_filter].index[-1]
-        df004_filter = df004.loc[rcs_id_filter].index[-1]
+            df003_filter = df003.loc[rcs_id_filter].index[-1]
+            df004_filter = df004.loc[rcs_id_filter].index[-1]
 
-        if(mad == 0):
-            if((tmp.iloc[1:5,i].mean() * 4) < x):
-                df003.loc[df003_filter, column] = np.nan
-                df004.loc[df004_filter, column] = mean
-        else:
-            zscore = 0.6745 * (x - median) / mad
-            if abs(zscore) > 50:
-                df003.loc[df003_filter, column] = np.nan
-                df004.loc[df004_filter, column] = mean
+            if(mad == 0):
+                if((tmp.iloc[1:5,i].mean() * 4) < x):
+                    df003.loc[df003_filter, column] = np.nan
+                    df004.loc[df004_filter, column] = mean
+            else:
+                zscore = 0.6745 * (x - median) / mad
+                if abs(zscore) > 50:
+                    df003.loc[df003_filter, column] = np.nan
+                    df004.loc[df004_filter, column] = mean
 
-# 5. 천의 자리 → +-40
-for key, value in list(select_tag.items())[9:]:
-    rcs_id_filter = (dfR['rcs_id'] == key[:-1]) & (dfR['data_typ'] == 'AI')
-    tmp = dfR.loc[rcs_id_filter, value]
-    columns = tmp.columns
+    # 5. 천의 자리 → +-40
+    for key, value in list(select_tag.items())[9:]:
+        rcs_id_filter = (dfR['rcs_id'] == key[:-1]) & (dfR['data_typ'] == 'AI')
+        tmp = dfR.loc[rcs_id_filter, value]
+        columns = tmp.columns
 
-    for i in range(len(columns)):
-        column = columns[i]
-        x = tmp.iloc[-1, i]
-        data = tmp.iloc[1:, i]
-        median = data.apply(lambda x: math.floor(x)).median()
-        # print(median)
-        mad = round(((data - median).abs()).median(), 2)
-        mean = tmp.iloc[:5, i].mean()
+        for i in range(len(columns)):
+            column = columns[i]
+            x = tmp.iloc[-1, i]
+            data = tmp.iloc[1:, i]
+            median = data.apply(lambda x: math.floor(x)).median()
+            # print(median)
+            mad = round(((data - median).abs()).median(), 2)
+            mean = tmp.iloc[:5, i].mean()
 
-        df003_filter = df003.loc[rcs_id_filter].index[-1]
-        df004_filter = df004.loc[rcs_id_filter].index[-1]
+            df003_filter = df003.loc[rcs_id_filter].index[-1]
+            df004_filter = df004.loc[rcs_id_filter].index[-1]
 
-        if(mad == 0):
-            if((tmp.iloc[1:5,i].mean() * 4) < x):
-                df003.loc[df003_filter, column] = np.nan
-                df004.loc[df004_filter, column] = mean
-        else:
-            zscore = 0.6745 * (x - median) / mad
-            if abs(zscore) > 40:
-                df003.loc[df003_filter, column] = np.nan
-                df004.loc[df004_filter, column] = mean
+            if(mad == 0):
+                if((tmp.iloc[1:5,i].mean() * 4) < x):
+                    df003.loc[df003_filter, column] = np.nan
+                    df004.loc[df004_filter, column] = mean
+            else:
+                zscore = 0.6745 * (x - median) / mad
+                if abs(zscore) > 40:
+                    df003.loc[df003_filter, column] = np.nan
+                    df004.loc[df004_filter, column] = mean
+except Exception as e:
+    logging.error('Error while processing data: %s', e)
 
-# ~ms003m, ~ms004m테이블에 insert
-now = dfX['meas_dtm'].max()
-insert_process('asswms003m', df003.loc[df003['meas_dtm'] == now])
-insert_process('asswms004m', df004.loc[df004['meas_dtm'] == now])
+
+
+try:
+    logging.info('Start saving data to database')
+    # ~ms003m, ~ms004m테이블에 insert
+    now = dfX['meas_dtm'].max()
+    insert_process('asswms003m_test', df003.loc[df003['meas_dtm'] == now])
+    insert_process('asswms004m_test', df004.loc[df004['meas_dtm'] == now])
+except Exception as e:
+    logging.error('Error while saving data to database: %s', e)
+
