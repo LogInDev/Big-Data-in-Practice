@@ -6,8 +6,7 @@ import warnings
 import re
 import math
 import logging
-
-
+from logging.handlers import RotatingFileHandler
 
 # row 생략 없이 출력
 pd.set_option('display.max_rows', None)
@@ -37,12 +36,12 @@ tag_list = [
 minmaxValue = [
                [ ['INFLOW_TSS_DNSTY', 24.0, 480.0], ['INFLOW_TOC_DNSTY', 7.0, 234.0], ['INFLOW_TN_DNSTY', 9.0, 96.0],
                 ['INFLOW_TP_DNSTY', 0.9, 9.4]],
-                [['FRST_SDMT_TANK_OVFL_NH4N_A1', 0.1, 22.2], ['FRST_SDMT_TANK_OVFL_NO3N_A1', 0.1, 4.0],
-                ['FRST_SDMT_TANK_OVFL_NH4N_B2', 0.1, 22.2], ['FRST_SDMT_TANK_OVFL_NO3N_B2', 0.1, 4.0],
-                ['AARB_TANK_NH4N_B1', 0.1, 22.2], ['AARB_TANK_NO3N_B1', 0.1, 4.0],
-                ['AARB_TANK_NH4N_B2', 0.1, 22.2], ['AARB_TANK_NO3N_B2', 0.1, 4.0],
-                ['AARB_TANK_NH4N_A3', 0.1, 22.2], ['AARB_TANK_NO3N_A3', 0.1, 4.0],
-                ['AARB_TANK_NH4N_A4', 0.1, 22.2], ['AARB_TANK_NO3N_A4', 0.1, 4.0],
+                [['FRST_SDMT_TANK_OVFL_NH4N_A1', 0.1, 50], ['FRST_SDMT_TANK_OVFL_NO3N_A1', 0.1, 4.0],
+                ['FRST_SDMT_TANK_OVFL_NH4N_B2', 0.1, 50], ['FRST_SDMT_TANK_OVFL_NO3N_B2', 0.1, 4.0],
+                ['AARB_TANK_NH4N_B1', 0.1, 50], ['AARB_TANK_NO3N_B1', 0.1, 4.0],
+                ['AARB_TANK_NH4N_B2', 0.1, 50], ['AARB_TANK_NO3N_B2', 0.1, 4.0],
+                ['AARB_TANK_NH4N_A3', 0.1, 50], ['AARB_TANK_NO3N_A3', 0.1, 4.0],
+                ['AARB_TANK_NH4N_A4', 0.1, 50], ['AARB_TANK_NO3N_A4', 0.1, 4.0],
                 ['ANX_TANK_NH4N_B1', 0.1, 11.6], ['ANX_TANK_NO3N_B1', 0.1, 3.3],
                 ['ANX_TANK_NH4N_B2', 0.1, 11.6], ['ANX_TANK_NO3N_B2', 0.1, 3.3],
                 ['ANX_TANK_NH4N_A3', 0.1, 11.6], ['ANX_TANK_NO3N_A3', 0.1, 3.3],
@@ -54,8 +53,8 @@ minmaxValue = [
                 ['SLG_IF_A1', 0, 9999], ['SLG_IF_A2', 0, 9999],
                 ['SLG_IF_A3', 0, 9999], ['SLG_IF_A4', 0, 9999],
                 ['SLG_IF_B1', 0, 9999], ['SLG_IF_B2', 0, 9999],
-                ['SLG_IF_B3', 0, 9999], ['SLG_IF_B4', 0, 9999]],    
-                [['TOT_INFLOW_FLUX', 0, 9999],],    
+                ['SLG_IF_B3', 0, 9999], ['SLG_IF_B4', 0, 9999]],
+                [['TOT_INFLOW_FLUX', 0, 9999],],
                 [['WOT_VOL_A1', 0, 9999], ['WOT_VOL_A2', 0, 9999],
                 ['WOT_VOL_A3', 0, 9999], ['WOT_VOL_A4', 0, 9999],
                 ['WOT_VOL_B1', 0, 9999], ['WOT_VOL_B2', 0, 9999],
@@ -69,7 +68,7 @@ minmaxValue = [
                 ['MLSS_A1', 1092.0, 5500.0], ['MLSS_A2', 1092.0, 5500.0],
                 ['MLSS_A3', 1092.0, 5500.0], ['MLSS_A4', 1092.0, 5500.0],
                 ['MLSS_B1', 1092.0, 5500.0], ['MLSS_B2', 1092.0, 5500.0],
-                ['MLSS_B3', 1092.0, 5500.0], ['MLSS_B4', 1092.0, 5500.0]],    
+                ['MLSS_B3', 1092.0, 5500.0], ['MLSS_B4', 1092.0, 5500.0]],
                 [['EC_SLG_FLOW', 0, 9999],
                 ['INTER_RTN_FLOW_A1', 0, 9999], ['INTER_RTN_FLOW_A2', 0, 9999],
                 ['INTER_RTN_FLOW_A3', 0, 9999], ['INTER_RTN_FLOW_A4', 0, 9999],
@@ -96,12 +95,14 @@ select_tag = {
     'MLS31' : ['tag_4']
 }
 
+# 이상치 유무 체크
+outerlierChk = False
 
 #-----------------------------------------------------------------------------------------------------------------------
 
 # 데이터 Insert
 def insert_process(tabel_name,df_final):
-    engine = create_engine('postgresql://')
+    engine = create_engine('postgresql:')
     try:
         # 데이터프레임을 DB 테이블에 삽입
         df_final.to_sql(tabel_name, engine, if_exists='append', index=False)
@@ -110,19 +111,20 @@ def insert_process(tabel_name,df_final):
         engine.dispose()
 
 #log남기기
-logger = logging.getLogger(name='')  # RootLogger
-logger.setLevel(logging.DEBUG)
-formatter = logging.Formatter('|%(asctime)s||%(name)s||%(levelname)s|\n%(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-file_handler = logging.FileHandler('test.log') ## 파일 핸들러 생성
-file_handler.setFormatter(formatter) ## 텍스트 포맷 설정
-logger.addHandler(file_handler) ## 핸들러 등록
+log_filename = 'DG_outlier_process.log'
+file_handler = RotatingFileHandler(log_filename, maxBytes=1024*1024, backupCount=3)
+file_handler.setLevel(logging.INFO)
+file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+
+logger = logging.getLogger('')
+logger.addHandler(file_handler)
 
 #-----------------------------------------------------------------------------------------------------------------------
 
 # ms001m데이터 가져오기
-engine = create_engine('postgresql://')
-
+engine = create_engine('postgresql')
 try:
+    logging.info('Start fetching data from database')
     sql_query = """
     SELECT *
     FROM asswms001m
@@ -134,7 +136,6 @@ try:
     )
     ORDER BY meas_dtm;
     """
-    logging.info('Start fetching data from database')
     df = pd.read_sql_query(sql_query, engine)
     
     # 컬럼 이름 지정
@@ -162,7 +163,7 @@ try:
 
     dfR = dfX.copy()
     df003 = dfX.copy()
-    df004 = dfX.copy() 
+    df004 = dfX.copy()
     
     # 1. 0.__ → +-10
     for key, value in list(select_tag.items())[:2]:
@@ -185,11 +186,13 @@ try:
                 if((tmp.iloc[1:5,i].mean() * 4) < x):
                     df003.loc[df003_filter, column] = np.nan
                     df004.loc[df004_filter, column] = mean
+                    outerlierChk = True
             else:
                 zscore = 0.6745 * (x - median) / mad
                 if abs(zscore) > 10:
                     df003.loc[df003_filter, column] = np.nan
                     df004.loc[df004_filter, column] = mean
+                    outerlierChk = True
 
     # 2. ._ → +-200
     for key, value in list(select_tag.items())[2:5]:
@@ -212,11 +215,13 @@ try:
                 if((tmp.iloc[1:5,i].mean() * 4) < x):
                     df003.loc[df003_filter, column] = np.nan
                     df004.loc[df004_filter, column] = mean
+                    outerlierChk = True
             else:
                 zscore = 0.6745 * (x - median) / mad
                 if abs(zscore) > 200:
                     df003.loc[df003_filter, column] = np.nan
                     df004.loc[df004_filter, column] = mean
+                    outerlierChk = True
 
     # 3. 십의 자리 → +-25
     for key, value in list(select_tag.items())[5:7]:
@@ -239,11 +244,13 @@ try:
                 if((tmp.iloc[1:5,i].mean() * 4) < x):
                     df003.loc[df003_filter, column] = np.nan
                     df004.loc[df004_filter, column] = mean
+                    outerlierChk = True
             else:
                 zscore = 0.6745 * (x - median) / mad
                 if abs(zscore) > 25:
                     df003.loc[df003_filter, column] = np.nan
                     df004.loc[df004_filter, column] = mean
+                    outerlierChk = True
 
     # 4. 백의 자리 → +-50
     for key, value in list(select_tag.items())[7:9]:
@@ -266,11 +273,13 @@ try:
                 if((tmp.iloc[1:5,i].mean() * 4) < x):
                     df003.loc[df003_filter, column] = np.nan
                     df004.loc[df004_filter, column] = mean
+                    outerlierChk = True
             else:
                 zscore = 0.6745 * (x - median) / mad
                 if abs(zscore) > 50:
                     df003.loc[df003_filter, column] = np.nan
                     df004.loc[df004_filter, column] = mean
+                    outerlierChk = True
 
     # 5. 천의 자리 → +-40
     for key, value in list(select_tag.items())[9:]:
@@ -294,22 +303,38 @@ try:
                 if((tmp.iloc[1:5,i].mean() * 4) < x):
                     df003.loc[df003_filter, column] = np.nan
                     df004.loc[df004_filter, column] = mean
+                    outerlierChk = True
             else:
                 zscore = 0.6745 * (x - median) / mad
                 if abs(zscore) > 40:
                     df003.loc[df003_filter, column] = np.nan
                     df004.loc[df004_filter, column] = mean
+                    outerlierChk = True
+    now = dfX['meas_dtm'].max()
 except Exception as e:
     logging.error('Error while processing data: %s', e)
 
-
+try:
+    logging.info('Start saving data to database asswms003m')
+    # ~ms003m, ~ms004m테이블에 insert
+    insert_process('asswms003m', df003.loc[df003['meas_dtm'] == now])
+except Exception as e:
+    logging.error('Error while saving data to database asswms003m: %s', e)
 
 try:
-    logging.info('Start saving data to database')
-    # ~ms003m, ~ms004m테이블에 insert
-    now = dfX['meas_dtm'].max()
-    insert_process('asswms003m_test', df003.loc[df003['meas_dtm'] == now])
-    insert_process('asswms004m_test', df004.loc[df004['meas_dtm'] == now])
+    logging.info('Start saving data to database asswms004m')
+    insert_process('asswms004m', df004.loc[df004['meas_dtm'] == now])
 except Exception as e:
-    logging.error('Error while saving data to database: %s', e)
+    logging.error('Error while saving data to database asswms004m: %s', e)
 
+if(outerlierChk):
+    try:
+        logging.info('Start saving data to database outerlierChk')
+        outerlierChkData = pd.DataFrame({
+            'meas_dtm' : [now]  # 리스트 형태로 값을 넣어줍니다.
+        }, index=[0])
+        insert_process('outerlierChkData', outerlierChkData)
+    except Exception as e:
+        logging.error('Error while saving data to database outerlierChk: %s', e)
+
+logging.info('------------------------------------------------------------------------------------')
