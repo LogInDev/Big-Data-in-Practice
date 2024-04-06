@@ -31,7 +31,7 @@
 select ename, lower(ename), upper(ename), initcap(ename) from emp;
 ```
 
-![](./img/2-1.png)
+![](2-1.png)
 
 - `lower()` : 전부 소문자로 출력
 - `upper()` : 전부 대문자로 출력
@@ -47,7 +47,7 @@ select ename, lower(ename), upper(ename), initcap(ename) from emp;
 select substr('SMITH', 2, 2) from dual;
 ```
 
-![](./img/2-2.png)
+![](2-2.png)
 
 ```sql
 -- 이름의 첫글자만 출력하고 첫글자를 소문자로 출력해라.
@@ -121,7 +121,7 @@ select ename, rpad(sal, 10, '*') from emp;
 select 'smith', ltrim('smith', 's'), rtrim('smith', 'h'), trim('s' from 'smiths') from dual;
 ```
 
-![](./img/2-3.png)
+![](2-3.png)
 
 ```sql
 insert into emp(empno, ename, sal) values(3821, 'JACK ', 3000);
@@ -141,7 +141,7 @@ select ename, sal from emp where rtrim(ename) = 'JACK';
 ```sql
 select 876.567, round(876.567, 2) from dual;
 ```
-![](./img/2-4.png)
+![](2-4.png)
 
 - 자릿수
 
@@ -186,7 +186,7 @@ select empno, ename from emp where mod(empno, 2) = 1;
 select sysdate from dual;
 ```
 
-![](./img/2-5.png)
+![](2-5.png)
 
 ```sql
 select ename, round(months_between(sysdate, hiredate)) from emp;
@@ -204,7 +204,7 @@ select months_between(sysdate, '1993/08/11')from dual;
 select add_months('2019/5/1', 100) from dual;
 ```
 
-![](./img/2-6.png)
+![](2-6.png)
 
 ```sql
 -- 오늘부터 100달 뒤의 날짜
@@ -235,7 +235,7 @@ select next_day(sysdate, 6) from dual;
 ```sql
 select last_day('2021/5/5') from dual;
 ```
-![](./img/2-7.png)
+![](2-7.png)
 
 ```sql
 -- 오늘부터 이번달 마지막 일까지 남은 일수
@@ -270,7 +270,7 @@ select ename, hiredate, to_char(hiredate, 'RRRR'),
 		to_char(hiredate, 'day'), to_char(hiredate, 'dy')
 from emp where ename = 'SCOTT';
 ```
-![](./img/2-9.png)
+![](2-9.png)
 
 ```sql
 -- 태어난 날짜의 요일을 구해라 - to_date()사용안하면 에러남.
@@ -297,14 +297,14 @@ select ename, hiredate from emp where hiredate = to_date('81/11/17', 'rr/mm/dd')
 ```sql
 select * from nls_session_parameters;
 ```
-![](./img/2-10.png)
+![](2-10.png)
 
 - 현재 세션의 날짜 형식을 DD/MM/RR 로 변경
 
 ```sql
 alter session set nls_date_format='DD/MM/RR';
 ```
-![](./img/2-11.png)
+![](2-11.png)
 
 
 ---
@@ -321,12 +321,12 @@ select ename, sal from emp where sal = '3000';
 
 select * from table(dbms_xplan.display);
 ```
-![](./img/2-12.png)
+![](2-12.png)
 
 ```sql
 select ename, sal from emp where sal like '30%';
 ```
-![](./img/2-13.png)
+![](2-13.png)
 
 ⇒ sal 컬럼을 문자로 바꿔서 실행시킴.
 
@@ -346,31 +346,31 @@ select ename, sal from emp where sal like '30%';
 ```sql
 select ename, sal,  comm, sal+comm from emp;
 ```
-![](./img/2-14.png)
+![](2-14.png)
 
 ```sql
 select ename, sal,  comm, sal+nvl(comm,0) from emp;
 ```
-![](./img/2-15.png)
+![](2-15.png)
 
 ```sql
 --comm 컬럼을 출력하는데 null인 경우 'no comm'으로 출력되게 해라
 select ename, nvl(comm, 'no comm') from emp;
 ```
-![](/img/2-16.png)
+![](2-16.png)
 
 ⇒ comm컬럼은 숫자 타입인데 대체 값으로 문자형을 넣어서 에러가 남.
 
 ```sql
 select ename, comm, nvl(to_char(comm), 'no comm') from emp;
 ```
-![](./img/2-17.png)
+![](2-17.png)
 
 
 ---
 ### decode()
 
-> `decode(컬럼명, 값1, 값1 대체값, 값2, 값2 대체값,..., else 값)` : if문을 sql로 구현한 것. code가 없다(de - 디카페인의 디). 동등비교(`=`)만 가능
+> `decode(컬럼명, 값1, 값1 대체값, 값2, 값2 대체값,..., else 값)` : if문을 sql로 구현한 것. code가 없다(de - 디카페인의 디). 동등비교(`=`)만 가능. 대체값 생략시 `null`로 적용.
 
 ```sql
 -- 이름, 부서번호, 보너스를 출력하는데 보너스가 부서번호가 10이면 300, 20이면 400 나머지 부서번호는 0을 출력해라
@@ -378,7 +378,7 @@ select ename, deptno,
     decode(deptno, 10, 300, 
 				   20, 400, 0 ) as 보너스 from emp;
 ```
-![](./img/2-18.png)
+![](2-18.png)
 
 
 ---
@@ -416,7 +416,7 @@ select max(sal) from emp;
 ```sql
 select job, max(sal) from emp where job = 'SALESMAN';
 ```
-![](./img/2-19.png)
+![](2-19.png)
 
 > ※ 그룹함수 연산을 통해 단순히 하나의 값만 출력하려 해도 단일 결과가 나오기 위해서는 그룹으로 묶어야 한다.
 > ⇒ 실행 순서
@@ -441,7 +441,7 @@ select min(sal) from emp where job = 'SALESMAN';
 -- 그룹별로 최소값 구하기
 select deptno, min(sal) from emp group by deptno;
 ```
-![](./img/2-20.png)
+![](2-20.png)
 
 
 ---
@@ -472,12 +472,12 @@ select deptno, to_char(avg(sal), '999,999') from emp group by deptno;
 -- null을 제외한 값의 합을 null이 아닌 값의 갯수로 나눔
 select avg(comm) from emp;
 ```
-![](./img/2-21.png)
+![](2-21.png)
 
 ```sql
 select avg(nvl(comm,0)) from emp;
 ```
-![](./img/2-22.png)
+![](2-22.png)
 
 
 ---
