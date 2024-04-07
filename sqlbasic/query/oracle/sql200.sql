@@ -562,3 +562,53 @@ where deptno in (20, 30);
 select deptno from dept
 minus
 select deptno from emp;
+
+--71
+select ename, sal
+from emp
+where sal > (
+select sal from emp where ename='JONES');
+
+select ename, sal from emp where hiredate >(
+select hiredate from emp where ename='ALLEN');
+
+--72
+select ename, sal from emp
+where sal in (select sal from emp where job = 'SALESMAN');
+
+select ename, job from emp
+where job in (select job from emp where deptno = 20);
+
+--73
+select mgr from emp;
+select ename from emp where empno not in (select mgr from emp);
+select ename from emp where empno not in (select mgr from emp where mgr is not null);
+
+--74
+select * from dept
+where exists (select * from emp where emp.deptno = dept.deptno);
+
+select * from dept d
+where not exists (select * from emp e where e.deptno = d.deptno);
+
+--75
+select job, sum(sal)
+from emp
+group by job having sum(sal) > (select sum(sal) from emp where job='SALESMAN');
+
+select deptno, count(*) from emp group by deptno having count(*) > (select count(*) from emp where deptno = 10);
+
+--76
+select * 
+from(select ename, sal, rank() over(order by sal desc) rnk
+from emp) where rnk = 1;
+
+select ename, hiredate
+from (select ename, hiredate,rank() over (order by hiredate) rnk from emp where job = 'SALESMAN')
+where rnk =1;
+
+--77
+select ename, sal, (select max(sal) from emp where job='SALESMAN'), (select min(sal) from emp where job='SALESMAN')
+from emp where job = 'SALESMAN';
+
+select ename, sal, (select avg(sal) from emp where deptno = 20) from emp where deptno = 20;
