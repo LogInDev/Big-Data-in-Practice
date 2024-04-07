@@ -899,3 +899,52 @@ select ename || '('||sal||')', sys_connect_by_path(ename || '('||sal||')', '/') 
 from emp
 start with ename='KING'
 connect by prior empno=mgr
+
+--93
+create table emp93
+( empno number(10),
+  ename varchar2(10), --영문은 10자리 한글은5자리까지 가능 
+  sal number(10,2),    --소수점 둘째자리까지 가능
+  hiredate date);
+  
+  select * from emp93;
+  
+insert into emp93(empno, ename, sal, hiredate)
+values(7788, 'scott', 3000, to_date('81/12/21', 'RR/MM/DD'));
+
+drop table emp93;
+
+create table emp50
+( empno number(10),
+ename varchar2(10),
+sal number(10),
+job varchar2(10),
+deptno number(10));
+
+drop table emp50;
+
+--94
+create global temporary table emp37
+(empno number(10),
+ename varchar2(10),
+sal number(10))
+on commit delete rows;   -- commit 하면 데이터 지우게 설정
+
+insert into emp37 values(1111, 'scot', 3000);
+insert into emp37 values(2222, 'smith',4000);
+
+select * from emp37;
+
+commit;
+
+select * from emp37;
+drop table emp94;
+create global temporary table emp94
+(empno number(10),
+ename varchar(10),
+sal number(10))
+on commit preserve rows;
+
+insert into emp94 values(1111, 'aaa', 3000);
+select * from emp94;
+commit;
