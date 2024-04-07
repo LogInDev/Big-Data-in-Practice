@@ -429,4 +429,136 @@ select ename, hiredate, sal
 from emp
 order by hiredate desc fetch first 5 rows only;
 
+--58
+select * from dept;
 
+select ename, loc from emp,dept where emp.deptno = dept.deptno;
+select e.ename, e.job, d.loc from emp e, dept d where e.deptno = d.deptno 
+		and e.job = 'SALESMAN';
+        
+select e.ename, e.sal, d.loc from emp e, dept d where e.deptno = d.deptno and d.loc = 'DALLAS';     
+
+--59
+drop  table  salgrade;
+ 
+create table salgrade
+( grade   number(10),
+  losal   number(10),
+  hisal   number(10) );
+ 
+insert into salgrade  values(1,700,1200);
+insert into salgrade  values(2,1201,1400);
+insert into salgrade  values(3,1401,2000);
+insert into salgrade  values(4,2001,3000);
+insert into salgrade  values(5,3001,9999);
+ 
+commit;
+
+select * from salgrade;
+select * from emp;
+
+select e.ename, e.sal, s.grade from emp e, salgrade s
+where e.sal between s.losal and s.hisal;
+
+select e.ename, e.sal from emp e, salgrade s where e.sal between s.losal and s.hisal and s.grade = 4 order by e.sal desc;
+
+--60
+select e.ename, d.loc from emp e, dept d where e.deptno (+) = d.deptno;
+
+insert into emp(empno, ename, sal, deptno)
+values(7122, 'JACK', 3000, 70);
+
+commit;
+select e.ename, d.loc from emp e, dept d where e.deptno = d.deptno(+);
+
+--61
+select 사원.Ename as 사원, 사원.job as 직업, 관리자.Ename as 관리자, 관리자.JOb as 직업 
+from emp 사원, EMP 관리자 where 사원.mgr = 관리자.Empno and 관리자.sal < 사원.sal;
+
+--62
+select e.ename, e.sal, d.loc from emp e join dept d on (e.deptno = d.deptno) where e.job='SALESMAN';
+
+select e.ename, e.sal, d.loc from emp e join dept d on (e.deptno = d.deptno) where e.sal between 1000 and 3000;
+
+--63
+select e.ename, e.job, e.sal, d.loc from emp e join dept d
+using (deptno) where e.job='SALESMAN';
+
+select e.ename, e.sal, d.loc from emp e join dept d using(deptno) where detno=10;
+
+--64
+select e.ename as 이름, e.job as 직업, E.SAL AS 월급, D.loc as 부서위치
+FROM Emp e natural join dept d where e.job = 'SALESMAN';
+
+select e.ename, e.job, e.sal, d.loc from emp e natural join dept d where e.job = 'SALESMAN' and deptno = 30;
+
+--65
+select e.ename, e.job, e.sal, d.loc 
+from emp e right outer join dept d
+on (e.deptno = d.deptno);
+
+insert into emp(empno, ename, sal, job, deptno)
+values(8282, 'JACK', 3000, 'ANALYST', 50);
+commit;
+select * from emp;
+
+select e.ename, e.job, e.sal, d.loc from emp e left outer join dept d
+on (e.deptno = d.deptno);
+
+--66
+select e.ename, e.job, e.sal, d.loc from emp e full outer join dept d on (e.deptno = d.deptno);
+
+select e.ename, e.job, e.sal, d.loc from emp e full outer join dept d on (e.deptno = d.deptno) where e.job = 'ANALYST' or d.loc = 'BOSTON';
+
+--67
+delete from emp where deptno = 70;
+commit;
+
+select deptno, sum(sal) from emp group by deptno
+union all
+select null,sum(sal)
+from emp;
+
+select job, sum(sal) from emp group by job
+union all
+select to_char(null), sum(sal) from emp;
+
+--68
+select deptno, sum(sal) from emp group by deptno
+union
+select to_number(null) as deptno, sum(sal) from emp;
+
+select job, sum(sal) from emp group by job
+union 
+select to_char(null), sum(sal) from emp
+order by job;
+
+select to_char(hiredate, 'RRRR') as hiredate, sum(sal) from emp group by to_char(hiredate, 'RRRR')
+union 
+select to_char(null), sum(sal) from emp order by hiredate;
+
+--69
+select ename, sal, job, deptno
+from emp
+where deptno in (10, 20)
+intersect
+select ename, sal, job, deptno
+from emp
+where deptno in (20, 30);
+
+select deptno from emp
+intersect
+select deptno from dept;
+
+--70
+select ename, sal, job, deptno
+from emp
+where deptno in (10, 20)
+minus
+select ename, sal, job, deptno
+from emp
+where deptno in (20, 30);
+
+select deptno from dept
+minus
+select deptno from emp;
