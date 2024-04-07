@@ -948,3 +948,97 @@ on commit preserve rows;
 insert into emp94 values(1111, 'aaa', 3000);
 select * from emp94;
 commit;
+
+--95
+create view emp_view
+as
+    select empno, ename, sal, job, deptno
+        from emp
+        where job='SALESMAN';
+        
+select * from emp_view;        
+
+create view emp2_view
+as
+    select empno, ename, job, sal
+    from emp
+    where deptno = 20;
+    
+select * from emp2_view;   
+
+create view emp_view2
+as
+select deptno, round(avg(sal)) abfsal
+from emp
+group by deptno;
+
+select * from emp_view2;
+
+create view emp_view96
+as
+select job, sum(sal) as sumsal
+from emp
+group by job;
+
+select * from emp_view96;
+
+--
+explain plan for
+select ename, sal
+from emp
+where sal = 3000;
+
+select * from table(dbms_xplan.display);
+
+create index emp_sal
+on emp(sal);
+
+select rowid, empno, ename from emp;
+
+select sal, rowid
+from emp
+where sal >= 0;
+
+create index emp_job
+on emp(job);
+
+select ename, job
+from emp
+where job = 'SALESMAN';
+
+--98
+create sequence seq1;
+select seq1.nextval
+from dual;
+
+create sequence seq2
+start with 1
+maxvalue 100
+increment by 1
+nocycle;
+
+select seq2.nextval
+from dual;
+
+create sequence seq3
+start with 1
+maxvalue 100
+increment by 1;
+
+create table emp500
+(empno number(10),
+ename varchar2(10));
+
+insert into emp500
+values(seq3.nextval, 'scott');
+select * from emp500;
+
+create sequence dept_seq1
+start with 50
+increment by 10;
+
+insert into dept(deptno, dname, loc)
+values(dept_seq1.nextval, 'transfer', 'seoul');
+
+select * from dept;
+
