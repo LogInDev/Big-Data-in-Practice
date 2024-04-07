@@ -10,4 +10,27 @@
 - `regexp_`(reqular expression) : 정규식 함수. SQL의 기본 함수보다 넓은 범위로 함수를 적용할 때 많이 쓰인다.
 - `commit` : 테이블에 변경이 생겼을 경우 해당 작업을 확정짓는 명령어이다.
 - `in line view(from절 서브쿼리)` : 쿼리문이 가장 처음 실행되는 `from절`에 새로운 쿼리를 작성하는 방식
-- 
+
+
+
+---
+# SQL의 종류
+
+## 1. QUERY문
+
+- `select`
+- `from`
+- `where`
+- `group by`
+- `having`
+- `order by`
+
+## 2. DML문
+
+- **`DML(Data Manipulation Language)` : `insert`, `update`, `delete`, `merge`**
+
+## 3. DDL문
+
+## 4. DCL문
+
+## 5. TCL문
