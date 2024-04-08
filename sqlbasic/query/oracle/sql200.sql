@@ -1245,3 +1245,162 @@ INSERT INTO EMP VALUES (7934,'MILLER','CLERK',7782,'82-01-11',1300,NULL,10);
 
 
 commit;
+
+--
+drop table dept5;
+
+create table dept5
+(deptno number(10),
+dname varchar2(14),
+loc varchar2(10) constraint dept5_loc_nn not null);
+
+drop table dept6;
+
+create table dept6
+(deptno number(10),
+dname varchar2(13),
+loc varchar2(10));
+
+alter table dept6
+modify loc constraint dept6_loc_nn not null;
+
+select count(*)
+from emp
+where ename is null;
+
+alter table emp
+modify ename constraint emp_ename_nn not null;
+
+select * from dept where deptno is null;
+
+alter table dept
+modify deptno constraint dept_deptno_nn not null;
+
+--107
+drop table emp6;
+
+create table emp6
+(empno number(10),
+ename varchar2(20),
+sal number(10) constraint emp6_sal_ck check (sal between 0 and 6000));
+
+alter table emp
+add constraint emp_sal_ck check(sal between 0 and 9000);
+
+alter table emp
+add constraint emp_deptno_ch check(deptno in (10, 20,30));
+
+alter table dept
+add constraint dept_loc_ck check(loc in ('NEW YORK', 'DALLAS', 'CHICAGO', 'BOSTON'));
+
+alter table emp
+add email varchar(20);
+
+alter table emp
+add constraint emp_email2_ck check(REGEXP_LIKE(email, '^[^@]+@[^@]+\.[^@]+$'));
+
+select * from emp; 
+
+insert into emp (empno, ename, email)
+values (5555, 'ss', 'ss@dd.');
+
+delete from emp where empno = 5555;
+
+--108
+select * from dept;
+
+create table dept7
+(deptno number(10) constraint dept7_deptno_pk primary key,
+dname varchar(20),
+loc varchar(20));
+
+create table emp7
+(empno number(10),
+ename varchar2(20),
+sal number(10),
+deptno number (10)
+constraint emp7_deptno_fk references dept7(deptno));
+
+select a.constraint_name, a.constraint_type, b.column_name
+from user_constraints a, user_cons_columns b
+where a.table_name in ('DEPT7', 'EMP7')
+and a.constraint_name = b.constraint_name;
+
+alter table dept7
+ drop constraint dept7_deptno_pk;
+ 
+ alter table dept7
+ drop constraint dept7_deptno_pk cascade;
+ 
+ alter table emp
+ add constraint empno_emp_pk primary key (empno);
+ 
+ alter table emp
+ add constraint mgr_emp_fk foreign key(mgr) references emp(empno);
+ 
+ --109
+ 
+ with job_sumsal as (select job, sum(sal) as 토탈 from emp group by job)
+ select job, 토탈
+ From job_sumsal
+ where 토탈 > (select avg(토탈)
+ from job_sumsal);
+ 
+ with dept_sumsal as (select deptno, sum(sal) as sumsal
+                        from emp
+                        group by deptno)
+select deptno, sumsal
+from dept_sumsal
+where sumsal > (select avg(sumsal) 
+                from dept_sumsal);
+                
+with empdept as (select * from emp e,dept d where e.deptno = d.deptno),
+locsal as (select loc, sum(sal) as sumsal from empdept
+                    group by loc)
+select loc, sumsal from locsal
+where sumsal > (select avg(sumsal) from locsal);
+
+with loc_sal as (select d.loc as loc,sum(e.sal) as total_salary
+from emp e join dept d
+on (e.deptno=d.deptno)
+group by d.loc)
+select loc,total_salary
+from loc_sal
+where total_salary > (select avg(total_salary)
+from loc_sal);
+
+--110
+select deptno, sum(sal)
+from (select job, sum(sal) 토탈
+        from emp
+        group by job) as job_sumsal,
+    (select deptno, sum(sal) 토탈
+    from emp
+    group by deptno
+    having sum(sal) > (select avg(토탈) + 3000
+                        from job_sumsal));
+                        
+                        
+with job_sumsal as (select job, sum(sal) 토탈
+                        from emp
+                        group by job),
+    deptno_sumsal as (select deptno, sum(sal) 토탈
+                        from emp
+                        group by deptno
+                        having sum(sal) > (select avg(토탈) + 3000
+                                                    from job_sumsal)
+                        )
+select deptno, 토탈 from deptno_sumsal;    
+
+with deptsum as (select deptno, sum(sal) as 토탈  
+                    from emp
+                    group by deptno
+                    ),
+    hiresum as ( select to_char(hiredate, 'RRRR') as 년도, sum(sal) as sumsal 
+                    from emp 
+                    group by to_char(hiredate, 'RRRR')
+                    having sum(sal) > (select avg(토탈)
+                                            from deptsum)
+                )
+select 년도, sumsal 
+from hiresum;
