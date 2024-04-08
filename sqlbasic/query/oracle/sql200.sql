@@ -1042,3 +1042,94 @@ values(dept_seq1.nextval, 'transfer', 'seoul');
 
 select * from dept;
 
+--
+select * from emp;
+
+select systimestamp from dual;
+
+insert into emp
+select *
+from emp
+as of timestamp(systimestamp - interval '5' minute);
+
+select * from emp;
+
+show parameter undo
+
+select
+* from emp;
+
+update emp set sal = 0;
+
+commit;
+
+merge into emp e
+using (select empno,sal from emp 
+    as of timestamp(systimestamp - interval '15' minute)) s
+on (e.empno = s.empno)
+when matched then
+update set e.sal = s.sal;
+
+delete from emp;
+
+commit;
+
+alter table emp enable row movement;
+
+flashback table emp to timestamp(systimestamp - interval '15'minute);
+
+commit;
+
+--
+select * from emp;
+
+update emp set sal = 0;
+
+commit;
+
+
+flashback table emp to timestamp(systimestamp - interval'5' minute);
+
+--
+drop table emp;
+
+select * from emp;
+
+select *
+from user_recyclebin
+order by droptime desc;
+
+flashback table emp to before drop;
+
+purge recyclebin;
+
+drop table dept;
+
+flashback table dept to before drop;
+
+select * from dept;
+commit;
+
+select ename, sal, deptno, versions_starttime, versions_endtime, versions_operation
+from emp
+versions between timestamp to_timestamp('2024-04-08 11:56:10', 'RRRR-MM-DD HH24:MI:SS')
+    and maxvalue
+where ename='KING'
+order by versions_starttime;
+
+
+select * from dept;
+
+update dept 
+set loc='SEOUL';
+
+commit;
+select * from dept;
+
+select deptno, dname, loc, versions_starttime, versions_endtime, versions_operation
+from dept
+versions between timestamp to_timestamp('2024-04-08 11:56:10', 'RRRR-MM-DD HH24:MI:SS')
+    and maxvalue
+where loc='SEOUL'
+order by versions_starttime;
+
