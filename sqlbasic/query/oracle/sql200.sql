@@ -1133,3 +1133,115 @@ versions between timestamp to_timestamp('2024-04-08 11:56:10', 'RRRR-MM-DD HH24:
 where loc='SEOUL'
 order by versions_starttime;
 
+--
+create table dept2
+(deptno number(10),
+dename varchar2(10),
+loc varchar2(10));
+
+drop table dept2;
+
+create table dept2
+(deptno number(10) constraint dept2_deptno_pk primary key,
+dname varchar2(10),
+loc varchar2(10));
+
+insert into dept2 values(10, 'aaa', 'bbb');
+insert into dept2 values(20, 'aaa', 'bbb');
+select * from dept2;
+
+insert into dept2 values(10, 'ccc', 'dddd');
+insert into dept2 values(null, 'ccc', 'dddd');
+
+
+select table_name, constraint_name
+from user_constraints;
+
+alter table dept2
+drop constraint dept2_deptno_pk;
+
+alter table dept
+add constraint dept_deptno_pk primary key(deptno);
+
+alter table emp
+add constraint emp_empno_pk primary key(empno);
+
+--
+
+create table dept3
+(deptno number(10),
+dname varchar2(14) constraint dept3_dname_un unique,
+loc varchar2(10));
+
+select a.constraint_name, a.constraint_type, b.column_name
+from user_constraints a, user_cons_columns b
+where a.table_name = 'DEPT3'
+and a.constraint_name = b.constraint_name;
+
+drop table dept3;
+
+create table dept4
+(deptno number(10),
+dname varchar2(13),
+loc varchar2(10));
+
+alter table dept4
+add constraint dept4_dname_un unique(dname);
+
+create table emp1000
+(empno number(10) constraint emp1000_empno_pk primary key,
+ename varchar2(10),
+sal number(10),
+job varchar2(10));
+
+alter table emp1000
+add constraint emp1000_empno_pk unique key;
+
+select empno, count(*) from emp group by empno having count(*) > 2;
+
+alter table emp
+add constraint emp_empno1_un unique(empno);
+
+drop table emp;
+drop table dept;
+
+
+CREATE TABLE DEPT
+       (DEPTNO number(10),
+        DNAME VARCHAR2(14),
+        LOC VARCHAR2(13) );
+
+
+INSERT INTO DEPT VALUES (10, 'ACCOUNTING', 'NEW YORK');
+INSERT INTO DEPT VALUES (20, 'RESEARCH',   'DALLAS');
+INSERT INTO DEPT VALUES (30, 'SALES',      'CHICAGO');
+INSERT INTO DEPT VALUES (40, 'OPERATIONS', 'BOSTON');
+
+CREATE TABLE EMP (
+ EMPNO               NUMBER(4) NOT NULL,
+ ENAME               VARCHAR2(10),
+ JOB                 VARCHAR2(9),
+ MGR                 NUMBER(4) ,
+ HIREDATE            DATE,
+ SAL                 NUMBER(7,2),
+ COMM                NUMBER(7,2),
+ DEPTNO              NUMBER(2) );
+
+
+INSERT INTO EMP VALUES (7839,'KING','PRESIDENT',NULL,'81-11-17',5000,NULL,10);
+INSERT INTO EMP VALUES (7698,'BLAKE','MANAGER',7839,'81-05-01',2850,NULL,30);
+INSERT INTO EMP VALUES (7782,'CLARK','MANAGER',7839,'81-05-09',2450,NULL,10);
+INSERT INTO EMP VALUES (7566,'JONES','MANAGER',7839,'81-04-01',2975,NULL,20);
+INSERT INTO EMP VALUES (7654,'MARTIN','SALESMAN',7698,'81-09-10',1250,1400,30);
+INSERT INTO EMP VALUES (7499,'ALLEN','SALESMAN',7698,'81-02-11',1600,300,30);
+INSERT INTO EMP VALUES (7844,'TURNER','SALESMAN',7698,'81-08-21',1500,0,30);
+INSERT INTO EMP VALUES (7900,'JAMES','CLERK',7698,'81-12-11',950,NULL,30);
+INSERT INTO EMP VALUES (7521,'WARD','SALESMAN',7698,'81-02-23',1250,500,30);
+INSERT INTO EMP VALUES (7902,'FORD','ANALYST',7566,'81-12-11',3000,NULL,20);
+INSERT INTO EMP VALUES (7369,'SMITH','CLERK',7902,'80-12-09',800,NULL,20);
+INSERT INTO EMP VALUES (7788,'SCOTT','ANALYST',7566,'82-12-22',3000,NULL,20);
+INSERT INTO EMP VALUES (7876,'ADAMS','CLERK',7788,'83-01-15',1100,NULL,20);
+INSERT INTO EMP VALUES (7934,'MILLER','CLERK',7782,'82-01-11',1300,NULL,10);
+
+
+commit;
