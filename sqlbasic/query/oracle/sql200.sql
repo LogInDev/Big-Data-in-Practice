@@ -1404,3 +1404,346 @@ with deptsum as (select deptno, sum(sal) as 토탈
                 )
 select 년도, sumsal 
 from hiresum;
+
+--
+select 2+3 from dual;
+
+select level as num
+from dual
+connect by level <= 10;
+
+with loop_table as (select level as num
+                        from dual
+                        connect by level <= 9)
+select '2' || 'x' || num || ' = ' || 2 * num as "2단"
+    from  loop_table;
+    
+select sum(level) from dual
+connect by level <= 100;
+
+with sum100 as (select sum(level) as sumval from dual
+connect by level <=100)
+select sumval -55 from sum100;
+
+select sum(level)
+from dual
+where level != 55
+connect by level <= 100;
+
+
+select sum(level)
+from dual
+where mod(level,2) =0
+connect by level <= 100;
+
+--112
+with first_num as ( select level as num
+                        from dual
+                        connect by level <= 9)
+select num || 'x' || num_x.nextval || ' = ' || num * num_x.nextval 
+from first_num;
+
+create sequence num_x
+start with 1
+maxvalue 9
+cycle
+nocache;
+
+with eightT as (select level +1 as numr
+from dual
+connect by level <= 8),
+nineT as (select level as numl
+from dual
+connect by level <= 9)
+select numr || 'x' || numl || ' = ' || numr * numl
+from nineT, eightT;
+
+with guguT as (select level as numr
+from dual
+connect by level <=7),
+loopT as (select level as numl
+from dual
+connect by level <= 9)
+select numr || 'x' || numl || ' = ' || numr * numl
+from guguT, loopT
+where numr in (2,5,7);
+
+with guguT as (select level + 1 as numr
+from dual
+connect by level <=8),
+loopT as (select level as numl
+from dual
+connect by level <= 9)
+select numr || 'x' || numl || ' = ' || numr * numl
+from guguT, loopT
+where mod(numr,2) = 0;
+
+--113.
+select lpad('★',level, '★'), level from dual
+connect by level <=8;
+
+select lpad('★', 9 - level, '★'), level from dual
+connect by level <= 8;
+
+select lpad('★',level, '★'), level from dual
+connect by level <=8
+union all
+select lpad('★', 9 - level, '★'), level from dual
+connect by level <= 8;
+
+--114
+with numV as (select level as num 
+                    from dual 
+                    connect by level <=5),
+    oddV as (select level as odd 
+                from dual
+                where mod(level, 2)=1
+                connect by level <=10)                
+select lpad(' ', o.odd, ' ') || rpad('★',n.num,'★') 
+from numV n, oddV o;
+
+
+select lpad(' ', 10-level, ' ') || lpad('★',level,'★')
+from dual
+connect by level <=5;
+
+with loop_table as (select level as num
+                        from dual
+                        connect by level <=8)
+select  lpad(' ', 10-num, ' ') || lpad( '★',num,'★')       
+from loop_table;
+
+with loop_table as (select level as num
+                        from dual
+                        connect by level <=8)
+select  lpad(' ', num, ' ') || lpad( '★',9 - num,'★')       
+from loop_table;
+
+--115
+select lpad(' ', 6-level, ' ') || lpad('★',level,'★')       
+from dual
+connect by level<=5
+union all
+select lpad(' ', level+1, ' ') || lpad('★',5-level,'★')       
+from dual
+connect by level<=4;
+
+undefine p_num
+accept p_num prompt '숫자입력 : '
+
+select lpad(' ', &p_num-level, ' ') || rpad('★', level, '★') as star
+from dual
+connect by level < &p_num+1
+union all
+select lpad(' ', level, ' ') || rpad('★', (&p_num) - level, '★') as star
+from dual
+connect by level< &p_num;
+
+
+undefine q_num
+accept q_num prompt '숫자입력 >> '
+
+select lpad(' ', level, ' ') || rpad('★', &q_num-level+1, '★')
+from dual
+connect by level<=&q_num
+union all
+select lpad(' ', &q_num-level, ' ') || rpad('★', level+1, '★')
+from dual
+connect by level <=&q_num-1;
+
+undefine wide
+undefine hig
+accept wide prompt '가로 >> ';
+accept hig prompt '세로 >> ';
+with loopT as(select level from dual
+                connect by level <=&hig)
+select lpad('★', &wide,'★')
+from loopT;
+
+
+
+undefine tmp
+accept tmp prompt '숫자를 입력해라 >> ';
+
+with loopT as(select level from dual
+                connect by level <= &tmp)
+select lpad('★', &&tmp,'★')
+from loopT;
+
+--117
+with sumT as (select level as num from dual
+                    connect by level<=10)
+select sum(num) from sumT;   
+
+select sum(level) 
+from dual
+connect by level<=10;
+
+undefined tmp1
+accept tmp1 prompt'합계구하기>> ';
+
+select sum(level) from dual
+connect by level <= &tmp1;
+
+select sum(level) 
+from dual
+where mod(level,2)=0
+connect by level <=100;
+
+select sum(level) 
+from dual
+where mod(level,2)=1
+connect by level <=100;
+
+
+-- 118
+select exp(10)
+from dual;
+
+select ln(10)
+from dual;
+
+undefine p_n
+accept p_n prompt '숫자를 입력해라 >> '
+
+select round(exp(sum(ln(level)))) 곱
+from dual
+connect by level <= &p_n;
+
+select round(exp(sum(ln(level))))
+from dual
+where mod(level,2)=0
+connect by level <=100;
+
+--119
+select listagg(level, ',')
+                    from dual
+                    where mod(level,2)=0
+                    connect by level <=10;
+
+select listagg(level, ',')
+                    from dual
+                    where mod(level,2)=1
+                    connect by level <=10;
+
+--120
+
+with loop_table as (select level as num
+                    from dual
+                    connect by level <= 10)
+select l1.num as 소수
+from loop_table l1, loop_table l2
+where mod(l1.num, l2.num) = 0
+group by l1.num
+having count(l1.num) = 2;
+
+select sum(소수)
+from (with loop_table as (select level as num
+                    from dual
+                    connect by level <=10)
+select l1.num as 소수
+from loop_table l1, loop_table l2
+where mod(l1.num, l2.num) = 0
+group by l1.num
+having count(l1.num) =2);
+
+
+select round(exp(sum(ln(소수))))
+from (with loop_table as (select level as num
+                    from dual
+                    connect by level <=10)
+select l1.num as 소수
+from loop_table l1, loop_table l2
+where mod(l1.num, l2.num) = 0
+group by l1.num
+having count(l1.num) =2);
+
+--121
+select 16 as num1, 24 as num2
+from dual;
+
+with num_d as (select 16 as num1, 24 as num2
+                from dual)
+select level, mod(num1, level), mod(num2, level)
+from num_d
+connect by level <= num2;
+
+
+with num_d as (select 16 as num1, 24 as num2
+                from dual)
+select max(level)
+from num_d
+where mod(num1, level)=0 and mod(num2, level)=0
+connect by level <= num2;
+
+with numT as (select 16 as num1, 24 as num2, 48 as num3
+                from dual)
+select max(level)
+from numT
+where mod(num1,level) =0
+    and mod(num2, level) = 0
+    and mod(num3, level) =0
+connect by level <=num3;
+
+--122
+
+select 최대공약수 * (num1/최대공약수) * (num2/최대공약수)
+from (with numT as (select 16 as num1, 24 as num2
+                from dual)
+select max(level) as 최대공약수 , num1, num2
+from numT
+where mod(num1, level) = 0
+    and mod(num2, level) = 0
+connect by level<=num2);
+
+select 최대공약수 * (num1 / 최대공약수) * (num2 / 최대공약수) * (num3 / 최대공약수) as 최소공배수
+from (with numT as (select 16 as num1, 24 as num2, 56 as num3 from dual)
+select max(level) 최대공약수, num1, num2, num3
+from numT
+where mod(num1, level) = 0
+    and mod(num2, level) = 0
+    and mod(num3, level) = 0
+connect by level <= num3);    
+
+--123
+
+accept num1 prompt ' 밑변의 길이를 입력해라>> '
+accept num2 prompt '높이를 입력해라>> '
+accept num3 prompt '빗변의 길이를 입력해라>> '
+
+select case when(power(&num1, 2) + power(&num2, 2)) = power(&num3,2)
+            then '직각 삼각형이 맞습니다.'
+            else '직각 삼각형이 아닙니다.' end as "피타고라스의 정리"
+from dual;          
+
+
+accept num1 prompt '왼쪽 빗변의 길이를 입력해라>> '
+accept num2 prompt '오른쪽 빗변의 길이를 입력해라>> '
+accept num3 prompt '밑변을 입력해라>> '
+
+select case when &num1 + &num2 = (2*&num3)
+                then '정삼각형이 맞습니다.'
+                else '정삼각형이 아닙니다.' end
+from dual;                
+
+--124
+select sum(case when (power(num1, 2) + power(num2, 2)) <= 1 then 1
+                else 0 end) / 100000 * 4 as "원주율"
+from (select dbms_random.value(0,1) as num1, 
+            dbms_random.value(0,1) as num2
+        from dual
+        connect by level < 100000);
+
+
+--125
+
+with loop_table as (select level as n
+                        from dual
+                        connect by level <= 1000000
+                    )
+select result
+from (
+        select n, power((1 + 1/n), n) as result
+        from loop_table
+    )
+where n = 1000000;    
