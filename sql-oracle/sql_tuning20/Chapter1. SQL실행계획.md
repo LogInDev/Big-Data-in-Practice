@@ -28,7 +28,7 @@
 >  
 >`select * from table(dbms_xplan.display_cursor(null,null,'ALLSTATS LAST'));`
 
-- `/*+ */` : 힌트 - 힌트대로 실행됨
+- `/*+ */` : 힌트 - 힌트대로 실행됨. 힌트를 통해 실행 계획을 제어할 수 있다.(ex : full scan되지 않고 index로 scan되게 등)
 - `/* */` : 주석
 - `E-Rows` : 예상 출력행
 - `A-Rows` : 실제 출력행

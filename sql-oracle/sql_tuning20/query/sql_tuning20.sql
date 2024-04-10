@@ -105,4 +105,49 @@ where loc> ' ';
 
 select * from table(dbms_xplan.display_cursor(null,null, 'ALLSTATS LAST'));
 
+--예제1. 월급이 1600인 사원들의 이름과 월급을 출력해라.
+
+create index emp_sal
+on emp(sal);
+
+select /*+ gather_plan_statistics index(emp emp_sal) */ ename, sal
+from emp
+where sal = 1600;
+
+select * from table (dbms_xplan.display_cursor(null,null, 'ALLSTATS LAST'));
+
+--예제2. 이름이 SCOTT인 사원의 이름과 월급을 출력해라. 
+
+create index emp_ename on emp(ename);
+
+select /*+ gather_plan_statistics index(e ename) */ ename, sal
+from emp e
+where ename = 'SCOTT';
+
+select * from table(dbms_xplan.display_cursor(null,null,'ALLSTATS LAST'));
+
+--예제3. 직업이 MANAGER인 사원들의 이름과 월급을 출력해라.
+
+create index emp_job
+on emp(job);
+
+select /*+ gather_plan_statistics index(emp job) */ ename, sal
+from emp
+where job = 'MANAGER';
+
+select * from table(dbms_xplan.display_cursor(null,null,'ALLSTATS LAST'));
+
+select job, rowid
+from emp
+where job > ' ';
+
+--문제) 사원 테이블의 입사일에 인덱스를 생성하고 입사일이 81년 11월 17일에 입사한 사원들의 이름과 입사일을 출력해라.
+create index emp_hiredate
+on emp(hiredate);
+
+select /*+ gather_plan_statistics index(emp hiredate) */ ename, hiredate
+from emp
+where hiredate = to_date('1981/11/17');
+
+select * from table(dbms_xplan.display_cursor(null,null,'ALLSTATS LAST'));
 
