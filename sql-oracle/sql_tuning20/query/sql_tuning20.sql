@@ -430,3 +430,91 @@ select /*+ gather_plan_statistics index_ffs(emp emp_telecom) */
 from emp
 where telecom is not null
 group by telecom;
+
+--@demo
+--@m.sql
+
+create table emp2
+as select rownum as num1, e.*
+from emp e;
+
+select * from emp2 where rownum <10;
+
+alter table emp2
+add col1 varchar2(10);
+
+alter table emp2
+add col2 varchar2(10);
+
+update emp2
+set col1='A'
+where num1 between 1 and 917504;
+
+update emp2
+set col1='B'
+where num1 between 917505 and 1835008;
+
+update emp2
+set col2='C'
+where num1 between 1 and 917404;
+
+update emp2
+set col2='D'
+where num1 between 917405 and 1835008;
+
+commit;
+
+create index emp2_col1 on emp2(col1);
+create index emp2_col2 on emp2(col2);
+
+select /*+ gather_plan_statistics */ count(*)
+from emp2
+where col1='A' and col2='D';
+
+select * from table(dbms_xplan.display_cursor(null,null,'ALLSTATS LAST'));
+
+select * from emp2;
+
+select count(*) from emp2 where col1='A';  -- 917504
+select count(*) from emp2 where col1='B';  -- 917504
+select count(*) from emp2 where col2='C';  -- 917404
+select count(*) from emp2 where col2='D';  -- 917604
+
+--@m2.sql
+
+select /*+ gather_plan_statistics and_equal(emp2 emp2_col1 emp2_col2)*/ count(*)
+from emp2
+where col1='A' and col2='D';
+select * from table(dbms_xplan.display_cursor(null,null,'ALLSTATS LAST'));
+
+select /*+ gather_plan_statistics and_equal(emp2 emp2_col1 emp2_col2)*/ ename, sal, deptno
+from emp2
+where col1='A' and col2='D';
+select * from table(dbms_xplan.display_cursor(null,null,'ALLSTATS LAST'));
+
+--index bitmap merge scan
+
+select /*+ gather_plan_statistics index_combine(emp2)*/ count(*)
+from emp2
+where col1='A' and col2='D';
+select * from table(dbms_xplan.display_cursor(null,null,'ALLSTATS LAST'));
+
+select /*+ gather_plan_statistics index_combine(emp2)*/ ename, sal, deptno
+from emp2
+where col1='A' and col2='D';
+select * from table(dbms_xplan.display_cursor(null,null,'ALLSTATS LAST'));
+
+--문제
+
+create index emp_job on emp(job);
+create index emp_deptno on emp(deptno);
+
+select /*+ gather_plan_statistics and_equal(emp emp_job emp_deptno) */ empno, ename, job, deptno
+from emp
+where deptno = 30 and job='SALESMAN';
+select * from table(dbms_xplan.display_cursor(null,null,'ALLSTATS LAST'));
+
+select /*+ gather_plan_statistics index_combine(emp) */ empno, ename, job, deptno
+from emp
+where deptno = 30 and job='SALESMAN';
+select * from table(dbms_xplan.display_cursor(null,null,'ALLSTATS LAST'));

@@ -39,7 +39,7 @@ insert into emp37 values(2222, 'smith',4000);
 
 select * from emp37;
 ```
-![](9-1.png)
+![](img/sql_query200/chapter9/9-1.png)
 
 ```sql
 commit;
