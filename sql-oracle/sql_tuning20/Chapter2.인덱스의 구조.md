@@ -4,7 +4,7 @@
 > `ROWID` : 행의 물리적 주소를 나타냄. `file번호 + block번호 + row번호`로 이루어짐. 모든 테이블에 다 있음.
 > `select rowid, 컬럼명 from 테이블명` : `ROWID`는 감춰진컬럼(shadow column)이여서 직접 특정해야 볼 수 있다.
 
-
+>index가 많아지게 되면 DML의 성능이 느려진다.
 ## 숫자형 컬럼의 인덱스
 
 >`index` : 쿼리문의 검색속도를 높이는 DB object이다.

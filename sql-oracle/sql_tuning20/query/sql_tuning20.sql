@@ -280,3 +280,76 @@ where sal = 1250;
 
 
 select * from table(dbms_xplan.display_cursor(null,null,'ALLSTATS LAST'));
+
+--
+create index emp_deptno_job
+on emp(deptno, job);
+
+select deptno, job, rowid
+from emp
+where deptno > 0;
+
+select /*+ gather_plan_statistics */ ename, deptno, sal
+from emp
+where job='MANAGER';
+
+select * from table(dbms_xplan.display_cursor(null,null,'ALLSTATS LAST'));
+
+--index skip scan
+select /*+ gather_plan_statistics index_ss(emp emp_deptno_job) */
+        ename, deptno, sal
+from emp
+where job='MANAGER';
+
+select * from table(dbms_xplan.display_cursor(null,null,'ALLSTATS LAST'));
+
+drop index emp_deptno_job;
+
+create index emp_sal_job
+on emp(sal,job);
+
+select sal, job, rowid
+from emp
+where sal >0;
+
+--@m.sql
+
+select /*+ gather_plan_statistics index(emp emp_sal_job) */ ename, sal, job, deptno
+from emp
+where sal between 950 and 3000
+and job='MANAGER';
+
+select * from table(dbms_xplan.display_cursor(null,null,'ALLSTATS LAST'));
+
+select /*+ gather_plan_statistics index_ss(emp emp_sal_job) */ ename, sal, job, deptno
+from emp
+where sal between 950 and 3000
+and job='MANAGER';
+
+select * from table(dbms_xplan.display_cursor(null,null,'ALLSTATS LAST'));
+
+drop index emp_sal_job;
+
+--문제
+
+create index emp_hiredate_job
+on emp(hiredate, job);
+
+select /*+ gether_plan_statistics index(emp) */
+		ename, sal
+from emp
+where hiredate between to_date('1980/01/01', 'RRRR/MM/DD')
+					and to_date('1981/12/31', 'RRRR/MM/DD')
+	and job='MANAGER';
+
+select * from table(dbms_xplan.display_cursor(null,null,'ALLSTATS LAST'));
+
+select /*+ gether_plan_statistics index_ss(emp) */
+		ename, sal
+from emp
+where hiredate between to_date('1980/01/01', 'RRRR/MM/DD')
+					and to_date('1981/12/31', 'RRRR/MM/DD')
+	and job='MANAGER';
+
+select * from table(dbms_xplan.display_cursor(null,null,'ALLSTATS LAST'));
+
