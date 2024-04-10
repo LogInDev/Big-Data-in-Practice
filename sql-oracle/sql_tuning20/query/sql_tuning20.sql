@@ -232,3 +232,51 @@ where deptno = 20;
 
 select * from table(dbms_xplan.display_cursor(null,null,'ALLSTATS LAST'));
 
+--table full scan 이란
+select /*+ gather_plan_statistics */ ename, sal
+from emp
+where sal = 3000;
+
+select * from table(dbms_xplan.display_cursor(null,null,'ALLSTATS LAST'));
+
+--단일 컬럼만 있을 때
+create index emp_sal
+on emp(sal);
+
+select /*+ gather_plan_statistics */ ename, sal
+from emp
+where sal = 3000;
+
+select * from table(dbms_xplan.display_cursor(null,null,'ALLSTATS LAST'));
+
+--결합 컬럼 인덱스
+
+drop index emp_sal;
+
+create index emp_sal_ename
+on emp(sal,ename);
+
+select /*+ gather_plan_statistics */ ename, sal
+from emp
+where sal = 3000;
+
+select * from table(dbms_xplan.display_cursor(null,null,'ALLSTATS LAST'));
+
+--index full scan
+
+select /*+ gather_plan_statistic */ ename, sal
+from emp
+where ename='JONES';
+
+select * from table(dbms_xplan.display_cursor(null,null,'ALLSTATS LAST'));
+
+--@demo
+create index emp_empno_ename_sal
+on emp(empno, ename, sal);
+
+select /*+ gather_plan_statistics index_fs(emp_empno_ename_sal) */ ename, sal
+from emp
+where sal = 1250;
+
+
+select * from table(dbms_xplan.display_cursor(null,null,'ALLSTATS LAST'));
