@@ -353,3 +353,80 @@ where hiredate between to_date('1980/01/01', 'RRRR/MM/DD')
 
 select * from table(dbms_xplan.display_cursor(null,null,'ALLSTATS LAST'));
 
+--@demo
+
+create index emp_job
+on emp(job);
+
+select job, rowid
+from emp
+where job> ' ';
+
+select /*+ gather_plan_statistics index_ffs(emp emp_job) */ job, count(*)
+from emp
+group by job;
+
+select * from table(dbms_xplan.display_cursor(null,null,'ALLSTATS LAST'));
+
+--job에 not null 제약 설정하기
+
+alter table emp
+modify job constraint emp_job_nn not null;
+
+select /*+ gather_plan_statistics index_ffs(emp emp_job) */ job, count(*)
+from emp
+group by job;
+
+select * from table(dbms_xplan.display_cursor(null,null,'ALLSTATS LAST'));
+
+alter table emp
+drop constraint emp_job_nn;
+
+select /*+ gather_plan_statistics index_ffs(emp emp_job) */ job, count(*)
+from emp
+where job is not null
+group by job;
+
+select * from table(dbms_xplan.display_cursor(null,null,'ALLSTATS LAST'));
+
+--index fast full scan과 index full scan의 차이 확인하기
+create index emp_deptno
+on emp(deptno);
+
+alter table emp
+modify deptno constraint emp_deptno_nn not null;
+
+select /*+ gather_plan_statistics index_ffs(emp emp_deptno) */ deptno, count(*)
+from emp
+group by deptno;
+
+select * from table(dbms_xplan.display_cursor(null,null,'ALLSTATS LAST'));
+
+--문제
+alter table emp
+add telecom varchar2(10);
+
+update emp
+set telecom='SK'
+where job in ('ANALYST', 'CLERK');
+
+update emp
+set telecom='LG'
+where job in ('PRESIDENT', 'SALESMAN');
+
+update emp
+set telecom='KT'
+where job in ('MANAGER');
+
+commit;
+
+select * from emp;
+
+create index emp_telecom
+on emp(telecom);
+
+select /*+ gather_plan_statistics index_ffs(emp emp_telecom) */ 
+        telecom, count(*)
+from emp
+where telecom is not null
+group by telecom;
