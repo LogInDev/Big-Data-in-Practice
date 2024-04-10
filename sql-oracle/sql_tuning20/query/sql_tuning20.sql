@@ -186,3 +186,49 @@ where ename like 'SCOTT%' and sal = 3000;
 
 select * from table(dbms_xplan.display_cursor(null,null,'ALLSTATS LAST'));
 
+--예제1. 사원번호가 7788번인 사원들의 사원번호와 이름과 월급을 출력해라.
+create index emp_empno
+on emp(empno);
+
+select /*+ gather_plan_statistics */ empno, ename
+from emp
+where empno = 7788;
+
+select * from table(dbms_xplan.display_cursor(null,null,'ALLSTATS LAST'));
+
+drop index emp_empno;
+
+create unique index emp_empno
+on emp(empno);
+
+create index emp_ename
+on emp(ename);
+
+select /*+ gather_plan_statistics */ empno, ename
+from emp
+where ename = 'SCOTT' and empno = 7788;
+
+--예제 3
+
+drop index emp_empno;
+
+alter table emp
+add constraint emp_empno_pk primary key (empno);
+
+select /*+ gather_plan_statistics */ empno, ename
+from emp
+where ename = 'SCOTT' and empno = 7788;
+
+select * from table(dbms_xplan.display_cursor(null,null,'ALLSTATS LAST'));
+
+--문제
+
+alter table dept
+add constraint dept_deptno_pk primary key (deptno);
+
+select /*+ gather_plan_statistics */ loc, dname
+from dept
+where deptno = 20;
+
+select * from table(dbms_xplan.display_cursor(null,null,'ALLSTATS LAST'));
+
