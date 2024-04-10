@@ -151,3 +151,38 @@ where hiredate = to_date('1981/11/17');
 
 select * from table(dbms_xplan.display_cursor(null,null,'ALLSTATS LAST'));
 
+--예제1. 연봉(sal * 12)이 36000인 사원들의 이름과 연봉을 출력하는 sql을 튜닝해라.
+
+create index emp_sal
+on emp(sal);
+
+select /*+ gather_plan_statistics index(emp sal) */ ename, sal * 12
+from emp
+where sal = 36000 /12;
+
+select * from table(dbms_xplan.display_cursor(null,null,'ALLSTATS LAST'));
+
+--예제2. 직업의 첫번째부터 5번째의 자리가 SALES인 사원들의 이름과 직업을 출력하는 sql을 튜닝해라.
+select ename, job
+from emp
+where job like 'SALES%';
+
+--예제3. 1981년도에 입사한 사원들의 이름과 입사일을 출력하는 sql을 튜닝해라
+select ename, hiredate
+from emp
+where hiredate between to_date('1981/01/01', 'RRRR/MM/DD')
+				and to_date('1981/12/31', 'RRRR/MM/DD')+1;
+                
+--문제) 다음 sql을 튜닝해라
+select /*+ gather_plan_statistics */ ename, sal, job
+from emp
+where ename || sal = 'SCOTT3000';
+
+select * from table(dbms_xplan.display_cursor(null,null,'ALLSTATS LAST'));
+
+select /*+ gather_plan_statistics */ ename, sal, job
+from emp
+where ename like 'SCOTT%' and sal = 3000;
+
+select * from table(dbms_xplan.display_cursor(null,null,'ALLSTATS LAST'));
+
