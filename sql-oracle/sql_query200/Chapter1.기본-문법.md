@@ -20,7 +20,7 @@ from emp;
 ```sql
 select ename || sal from emp;
 ```
-![[1-1.png||110]]
+![[img/sql_tuning/chapter1/1-1.png||110]]
 
 
 - `'`를 사용하여 문장으로 출력가능
